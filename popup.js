@@ -17,12 +17,13 @@ function getCurrentTabUrl(callback) {
 }
 
 function slackCopy() {
+  var reg = /\[.*ago\]/g
   chrome.tabs.executeScript(null,
     {code: `
-      chrome.storage.local.set({ 'slackRawText':  window.getSelection().toString()})
-      chrome.storage.local.get('slackRawText', function (result) {
-        console.log(result.slackRawText)
-      });
+      var slackParsedText = window.getSelection().toString();
+      slackParsedText = slackParsedText.replace(${reg}, '<br>')
+      chrome.storage.local.set({ 'slackParsedText':  slackParsedText})
+      console.log(slackParsedText)
     `});
   setTimeout(function(){
     window.close();
@@ -32,11 +33,11 @@ function slackCopy() {
 function zendeskPaste() {
   chrome.tabs.executeScript(null,
     {code: `
-      chrome.storage.local.get('slackRawText', function (result) {
-        console.log(result.slackRawText)
+      chrome.storage.local.get('slackParsedText', function (result) {
+        console.log(result.slackParsedText)
         var x = document.getElementsByClassName('editor zendesk-editor--rich-text-comment')[0];
         var node = document.createElement('p');
-        var textnode = document.createTextNode(result.slackRawText);
+        var textnode = document.createTextNode(result.slackParsedText);
         node.appendChild(textnode);
         x.appendChild(node);
         console.log('Zendesk Paste Complete!')
