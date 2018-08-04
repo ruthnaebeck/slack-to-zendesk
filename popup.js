@@ -16,12 +16,15 @@ function getCurrentTabUrl(callback) {
 
 function slackCopy() {
   var regTime = /\[.*ago\]/g;
-  var newLine = /\r?\n/;
+  var regNewLine = /\r?\n/;
+  var regEmoji = /:\S*:/g;
+  var regEdited = /\(edited\)/g;
   chrome.tabs.executeScript(null,
     {code: `
-      var slackParse = window.getSelection().toString().replace(${regTime}, '</b>').split(${newLine}).map(item => {return item.trim()})
-      chrome.storage.local.set({'slackParse': slackParse})
-      console.log(slackParse)
+      var slackParse = window.getSelection().toString().replace(${regTime}, '</b>').replace(${regEmoji}, '').replace(${regEdited}, '');
+      var slackArray = slackParse.split(${regNewLine}).map(item => {return item.trim()});
+      chrome.storage.local.set({'slackParse': slackArray});
+      console.log(slackParse);
     `});
   setTimeout(function(){
     window.close();
@@ -36,13 +39,17 @@ function zendeskPaste() {
         var x = document.getElementsByClassName('editor zendesk-editor--rich-text-comment')[0];
         var h = '<p>';
         for(var i = 0; i < parse.length; i++) {
-          if (parse[i]) {
+          if (parse[i] && parse[i] !== '</b>') {
             if (parse[i].indexOf('</b>') > -1) {
               h += '<b>' + parse[i] + '<br>'
-            } else if (parse[i+1] && parse[i+1].indexOf('</b>') > -1) {
+            } else if (parse[i+1] && parse[i+1] == '</b>') {
               h += '<b>' + parse[i] + '</b><br>'
             } else {
               h += parse[i] + '<br>'
+            }
+          } else {
+            if (parse[i-1] && parse[i-1] && parse[i] !== '</b>'){
+              h += '<br>'
             }
           }
         }
@@ -55,8 +62,6 @@ function zendeskPaste() {
     window.close();
   }, 2000);
 }
-
-
 
 function renderHTML(value) {
   document.getElementById('slackZendesk').innerHTML = value;
