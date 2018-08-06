@@ -29,6 +29,8 @@ function zendeskPaste() {
   var regTime = /\[.*ago\]/g;
   var regEmoji = /:\S*:/g;
   var regEdited = /\(edited\)/g;
+  var regCloudApp = /cl.ly\nImage.*/g;
+
   var regNewLine = /\r?\n/;
   var regUrl = /http\S*/g;
 
@@ -38,6 +40,7 @@ function zendeskPaste() {
         time: [${regTime}, '</b>'],
         emoji: [${regEmoji}, ''],
         edited: [${regEdited}, ''],
+        cloudApp: [${regCloudApp}, '']
       }
       chrome.storage.local.get('slackParse', function (result) {
         var parseStr = result.slackParse;
