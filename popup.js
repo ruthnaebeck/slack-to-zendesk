@@ -14,10 +14,24 @@ function getCurrentTabUrl(callback) {
   });
 }
 
+// var range;
+//       if (document.selection && document.selection.createRange) {
+//         range = document.selection.createRange();
+//         console.log(range.htmlText);
+//       }
+
 function slackCopy() {
   chrome.tabs.executeScript(null,
     {code: `
-      chrome.storage.local.set({'slackParse': window.getSelection().toString()});
+      var selection = window.getSelection();
+      var range = selection.getRangeAt(0);
+      var clonedSelection = range.cloneContents();
+      var div = document.createElement('div');
+      div.appendChild(clonedSelection);
+      chrome.storage.local.set({
+        'slackText': selection.toString(),
+        'slackHTML': div.innerHTML
+      });
       console.log('Copied Slack Thread');
     `});
   setTimeout(function(){
@@ -32,7 +46,8 @@ function zendeskPaste() {
   var regCloudApp = /cl.ly\nImage.*/g;
 
   var regNewLine = /\r?\n/;
-  var regUrl = /http\S*/g;
+  var regUrl = /[^`]http\S*/g;
+  var regCode = /`\S*`/g;
 
   chrome.tabs.executeScript(null,
     {code: `
@@ -42,20 +57,21 @@ function zendeskPaste() {
         edited: [${regEdited}, ''],
         cloudApp: [${regCloudApp}, '']
       }
-      chrome.storage.local.get('slackParse', function (result) {
-        var parseStr = result.slackParse;
+      chrome.storage.local.get(['slackText', 'slackHTML'], function (result) {
+        var parseStr = result.slackText;
         for (var x in regObj) {
           parseStr = parseStr.replace(regObj[x][0], regObj[x][1])
         }
+        var rMatches = [];
+
         var urlStr = parseStr;
         var urlMatch = ${regUrl}.exec(urlStr);
-        var urlMatches = [];
         while (urlMatch != null) {
-          urlMatches.push(urlMatch[0]);
+          rMatches.push(urlMatch[0]);
           urlStr = urlStr.substring(urlMatch.index + urlMatch[0].length);
           urlMatch = ${regUrl}.exec(urlStr);
         }
-        urlMatches.forEach(match => {
+        rMatches.forEach(match => {
           parseStr = parseStr.replace(match, '<a href="' + match + '" target="blank">' + match + '</a>')
         })
         var parse = parseStr.split(${regNewLine}).map(item => {return item.trim()});
