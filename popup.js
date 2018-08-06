@@ -27,14 +27,22 @@ function slackCopy() {
 
 function zendeskPaste() {
   var regTime = /\[.*ago\]/g;
-  var regNewLine = /\r?\n/;
   var regEmoji = /:\S*:/g;
   var regEdited = /\(edited\)/g;
+  var regNewLine = /\r?\n/;
 
   chrome.tabs.executeScript(null,
     {code: `
+      var regObj = {
+        time: [${regTime}, '</b>'],
+        emoji: [${regEmoji}, ''],
+        edited: [${regEdited}, '']
+      }
       chrome.storage.local.get('slackParse', function (result) {
-        var parseStr = result.slackParse.replace(${regTime}, '</b>').replace(${regEmoji}, '').replace(${regEdited}, '');
+        var parseStr = result.slackParse;
+        for (var x in regObj) {
+          parseStr = parseStr.replace(regObj[x][0], regObj[x][1])
+        }
         var parse = parseStr.split(${regNewLine}).map(item => {return item.trim()});
         var x = document.getElementsByClassName('editor zendesk-editor--rich-text-comment')[0];
         var h = '<p>';
