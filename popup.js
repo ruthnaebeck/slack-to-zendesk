@@ -1,5 +1,5 @@
 'use strict';
-/* global chrome slackRawText */
+/* global chrome */
 
 function getCurrentTabUrl(callback) {
   var queryInfo = {
@@ -15,16 +15,10 @@ function getCurrentTabUrl(callback) {
 }
 
 function slackCopy() {
-  var regTime = /\[.*ago\]/g;
-  var regNewLine = /\r?\n/;
-  var regEmoji = /:\S*:/g;
-  var regEdited = /\(edited\)/g;
   chrome.tabs.executeScript(null,
     {code: `
-      var slackParse = window.getSelection().toString().replace(${regTime}, '</b>').replace(${regEmoji}, '').replace(${regEdited}, '');
-      var slackArray = slackParse.split(${regNewLine}).map(item => {return item.trim()});
-      chrome.storage.local.set({'slackParse': slackArray});
-      console.log(slackParse);
+      chrome.storage.local.set({'slackParse': window.getSelection().toString()});
+      console.log('Copied Slack Thread');
     `});
   setTimeout(function(){
     window.close();
@@ -32,10 +26,16 @@ function slackCopy() {
 }
 
 function zendeskPaste() {
+  var regTime = /\[.*ago\]/g;
+  var regNewLine = /\r?\n/;
+  var regEmoji = /:\S*:/g;
+  var regEdited = /\(edited\)/g;
+
   chrome.tabs.executeScript(null,
     {code: `
       chrome.storage.local.get('slackParse', function (result) {
-        var parse = result.slackParse;
+        var parseStr = result.slackParse.replace(${regTime}, '</b>').replace(${regEmoji}, '').replace(${regEdited}, '');
+        var parse = parseStr.split(${regNewLine}).map(item => {return item.trim()});
         var x = document.getElementsByClassName('editor zendesk-editor--rich-text-comment')[0];
         var h = '<p>';
         for(var i = 0; i < parse.length; i++) {
