@@ -30,19 +30,31 @@ function zendeskPaste() {
   var regEmoji = /:\S*:/g;
   var regEdited = /\(edited\)/g;
   var regNewLine = /\r?\n/;
+  var regUrl = /http\S*/g;
 
   chrome.tabs.executeScript(null,
     {code: `
       var regObj = {
         time: [${regTime}, '</b>'],
         emoji: [${regEmoji}, ''],
-        edited: [${regEdited}, '']
+        edited: [${regEdited}, ''],
       }
       chrome.storage.local.get('slackParse', function (result) {
         var parseStr = result.slackParse;
         for (var x in regObj) {
           parseStr = parseStr.replace(regObj[x][0], regObj[x][1])
         }
+        var urlStr = parseStr;
+        var urlMatch = ${regUrl}.exec(urlStr);
+        var urlMatches = [];
+        while (urlMatch != null) {
+          urlMatches.push(urlMatch[0]);
+          urlStr = urlStr.substring(urlMatch.index + urlMatch[0].length);
+          urlMatch = ${regUrl}.exec(urlStr);
+        }
+        urlMatches.forEach(match => {
+          parseStr = parseStr.replace(match, '<a href="' + match + '" target="blank">' + match + '</a>')
+        })
         var parse = parseStr.split(${regNewLine}).map(item => {return item.trim()});
         var x = document.getElementsByClassName('editor zendesk-editor--rich-text-comment')[0];
         var h = '<p>';
