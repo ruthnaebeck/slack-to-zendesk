@@ -14,12 +14,6 @@ function getCurrentTabUrl(callback) {
   });
 }
 
-// var range;
-//       if (document.selection && document.selection.createRange) {
-//         range = document.selection.createRange();
-//         console.log(range.htmlText);
-//       }
-
 function slackCopy() {
   chrome.tabs.executeScript(null,
     {code: `
