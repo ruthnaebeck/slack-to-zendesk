@@ -1,2 +1,4 @@
 # Slack to Zendesk
-Easily copy Slack threads Zendesk
+Copy Slack threads Zendesk with better formatting!
+
+This project is a work-in-progress
